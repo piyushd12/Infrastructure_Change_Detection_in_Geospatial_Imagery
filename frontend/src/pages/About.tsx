@@ -25,18 +25,18 @@ const About = () => {
       category: "AI & Machine Learning",
       items: ["TensorFlow", "PyTorch", "OpenCV", "Scikit-learn", "NumPy"]
     },
-    {
-      category: "Satellite Data Processing",
-      items: ["GDAL", "Sentinel-2", "Landsat", "MODIS", "Planet Labs API"]
-    },
+    // {
+    //   category: "Satellite Data Processing",
+    //   items: ["GDAL", "Sentinel-2", "Landsat", "MODIS", "Planet Labs API"]
+    // },
     {
       category: "Web Technologies",
       items: ["React", "TypeScript", "Tailwind CSS", "Node.js", "Python Flask"]
     },
-    {
-      category: "Cloud & Infrastructure",
-      items: ["AWS", "Google Earth Engine", "Docker", "Kubernetes", "PostgreSQL"]
-    }
+    // {
+    //   category: "Cloud & Infrastructure",
+    //   items: ["AWS", "Google Earth Engine", "Docker", "Kubernetes", "PostgreSQL"]
+    // }
   ];
 
   const applications = [
@@ -52,18 +52,18 @@ const About = () => {
       description: "Monitor urban development and infrastructure changes over time",
       examples: ["Construction monitoring", "Land use changes", "Infrastructure development"]
     },
-    {
-      icon: MapPin,
-      title: "Environmental Monitoring",
-      description: "Track environmental changes and natural resource management",
-      examples: ["Deforestation tracking", "Coastal erosion", "Agricultural monitoring"]
-    },
-    {
-      icon: Zap,
-      title: "Insurance & Risk Assessment",
-      description: "Support insurance claims processing and risk evaluation",
-      examples: ["Damage verification", "Risk modeling", "Claims automation"]
-    }
+    // {
+    //   icon: MapPin,
+    //   title: "Environmental Monitoring",
+    //   description: "Track environmental changes and natural resource management",
+    //   examples: ["Deforestation tracking", "Coastal erosion", "Agricultural monitoring"]
+    // },
+    // {
+    //   icon: Zap,
+    //   title: "Insurance & Risk Assessment",
+    //   description: "Support insurance claims processing and risk evaluation",
+    //   examples: ["Damage verification", "Risk modeling", "Claims automation"]
+    // }
   ];
 
   return (
@@ -202,11 +202,11 @@ const About = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Maximum Resolution</span>
-                  <span className="font-medium">10,000 x 10,000 pixels</span>
+                  <span className="font-medium">1024 x 1024 pixels</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Accuracy</span>
-                  <span className="font-medium text-success">94-98%</span>
+                  <span className="font-medium text-success">85-90%</span>
                 </div>
               </CardContent>
             </Card>
