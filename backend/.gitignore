@@ -1,0 +1,10 @@
+results/
+__pycache__/
+*.pyc
+weights/
+data/
+logs/
+outputs/
+*/__pycache__/
+uploads/
+temp/
