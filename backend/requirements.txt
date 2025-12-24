@@ -12,3 +12,4 @@ efficientnet-pytorch
 segmentation-models-pytorch
 rasterio
 shapely
+huggingface_hub

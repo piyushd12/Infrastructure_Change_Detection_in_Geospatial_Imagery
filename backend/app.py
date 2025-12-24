@@ -15,6 +15,11 @@ import shutil
 import json
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
+import os
+from torch.hub import download_url_to_file
+from huggingface_hub import hf_hub_download
+from dotenv import load_dotenv
+load_dotenv()
 
 try:
     from zoo.models import SeResNext50_Unet_Loc, SeResNext50_Unet_Double
@@ -48,13 +53,12 @@ except ImportError:
 app = Flask(__name__)
 CORS(app)
 
-# === FIXED PATHS ===
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Directory where app.py is located
-
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+WEIGHTS_FOLDER = os.path.join(BASE_DIR, 'weights')
 UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 RESULTS_FOLDER = os.path.join(BASE_DIR, 'results')
-LOC_MODEL_PATH = os.path.join(BASE_DIR, 'weights', 'res50_loc_1_tuned_best')
-CLS_MODEL_PATH = os.path.join(BASE_DIR, 'weights', 'res50_cls_cce_1_0_last')
+LOC_MODEL_PATH = os.path.join(WEIGHTS_FOLDER, 'res50_loc_1_tuned_best')
+CLS_MODEL_PATH = os.path.join(WEIGHTS_FOLDER, 'res50_cls_cce_1_0_last')
 
 # UPLOAD_FOLDER = 'uploads'
 # RESULTS_FOLDER = 'results'
@@ -70,9 +74,9 @@ cls_model = None
 
 DAMAGE_COLORS = {
     0: [255, 255, 255],  # No damage - White
-    1: [0, 0, 255],      # Minor - Blue
-    2: [255, 255, 0],    # Major - Yellow
-    3: [255, 0, 0],    # Destroyed - Red
+    1: [255, 255, 0],    # Minor - Yellow
+    2: [255, 165, 0],    # Major - Orange
+    3: [255, 0, 0],      # Destroyed - Red
 }
 
 DAMAGE_LABELS = {
@@ -82,28 +86,150 @@ DAMAGE_LABELS = {
     3: "Destroyed"
 }
 
+
+def download_weight(url, dest):
+    if not os.path.exists(dest):
+        print(f"Downloading {os.path.basename(dest)}...")
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        download_url_to_file(url, dest)
+        print("Download complete")
+    else:
+        print(f"Weight found: {dest}")
+
+download_weight(f"{os.getenv('HF_MODEL_REPO')}/res50_loc_1_tuned_best", LOC_MODEL_PATH)
+download_weight(f"{os.getenv('HF_MODEL_REPO')}/res50_cls_cce_1_0_last", CLS_MODEL_PATH)
+
+# def load_models():
+#     global loc_model, cls_model
+#     try:
+#         print("Loading localization model...")
+#         loc_model = SeResNext50_Unet_Loc().to(DEVICE)
+#         loc_checkpoint = torch.load(LOC_MODEL_PATH, map_location=DEVICE, weights_only=False)
+#         loc_model.load_state_dict(loc_checkpoint['state_dict'])
+#         loc_model.eval()
+#         print("Localization model loaded")
+        
+#         print("Loading classification model...")
+#         cls_model = SeResNext50_Unet_Double().to(DEVICE)
+#         cls_checkpoint = torch.load(CLS_MODEL_PATH, map_location=DEVICE, weights_only=False)
+#         cls_model.load_state_dict(cls_checkpoint['state_dict'], strict=False)
+#         cls_model.eval()
+#         print("Classification model loaded")
+        
+#         print(f"Models loaded successfully on {DEVICE}")
+#         return True
+#     except Exception as e:
+#         print(f"Error loading models: {str(e)}")
+#         return False
+
 def load_models():
     global loc_model, cls_model
     try:
-        print("Loading localization model...")
+        # repo_id = "piyush-s-deshmukh/change_detection_loc_and_cls"
+        
+        loc_url = f"{os.getenv('HF_MODEL_REPO')}/res50_loc_1_tuned_best"
+        cls_url = f"{os.getenv('HF_MODEL_REPO')}/res50_cls_cce_1_0_last"
+        
+        os.makedirs(WEIGHTS_FOLDER, exist_ok=True)
+        
+        loc_weight_path = os.path.join(WEIGHTS_FOLDER, "res50_loc_1_tuned_best")
+        cls_weight_path = os.path.join(WEIGHTS_FOLDER, "res50_cls_cce_1_0_last")
+        
+        if not os.path.exists(loc_weight_path):
+            print("Downloading localization model...")
+            download_url_to_file(loc_url, loc_weight_path)
+            print("✓ Localization model downloaded")
+        else:
+            print("✓ Localization model already exists")
+        
+        if not os.path.exists(cls_weight_path):
+            print("Downloading classification model...")
+            download_url_to_file(cls_url, cls_weight_path)
+            print("✓ Classification model downloaded")
+        else:
+            print("✓ Classification model already exists")
+        
+        print("Loading models into memory...")
         loc_model = SeResNext50_Unet_Loc().to(DEVICE)
-        loc_checkpoint = torch.load(LOC_MODEL_PATH, map_location=DEVICE, weights_only=False)
+        loc_checkpoint = torch.load(loc_weight_path, map_location=DEVICE, weights_only=False)
         loc_model.load_state_dict(loc_checkpoint['state_dict'])
         loc_model.eval()
-        print("Localization model loaded")
         
-        print("Loading classification model...")
         cls_model = SeResNext50_Unet_Double().to(DEVICE)
-        cls_checkpoint = torch.load(CLS_MODEL_PATH, map_location=DEVICE, weights_only=False)
+        cls_checkpoint = torch.load(cls_weight_path, map_location=DEVICE, weights_only=False)
         cls_model.load_state_dict(cls_checkpoint['state_dict'], strict=False)
         cls_model.eval()
-        print("Classification model loaded")
         
-        print(f"Models loaded successfully on {DEVICE}")
+        print(f"Models loaded on {DEVICE}")
         return True
+        
     except Exception as e:
         print(f"Error loading models: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
+
+
+
+# def load_models():
+#     global loc_model, cls_model
+#     try:
+#         repo_id = os.getenv('HF_MODEL_REPO')
+        
+#         loc_filename = "res50_loc_1_tuned_best"
+#         cls_filename = "res50_cls_cce_1_0_last"
+        
+#         os.makedirs(WEIGHTS_FOLDER, exist_ok=True)
+        
+#         loc_weight_path = os.path.join(WEIGHTS_FOLDER, loc_filename)
+#         cls_weight_path = os.path.join(WEIGHTS_FOLDER, cls_filename)
+        
+#         if not os.path.exists(loc_weight_path):
+#             print(f"Downloading localization model from Hugging Face...")
+#             loc_weight_path = hf_hub_download(
+#                 repo_id=repo_id,
+#                 filename=loc_filename,
+#                 local_dir=WEIGHTS_FOLDER,
+#                 local_dir_use_symlinks=False
+#             )
+#             print(f"✓ Localization model downloaded to {loc_weight_path}")
+#         else:
+#             print(f"✓ Localization model already exists: {loc_weight_path}")
+        
+#         if not os.path.exists(cls_weight_path):
+#             print(f"Downloading classification model from Hugging Face...")
+#             cls_weight_path = hf_hub_download(
+#                 repo_id=repo_id,
+#                 filename=cls_filename,
+#                 local_dir=WEIGHTS_FOLDER,
+#                 local_dir_use_symlinks=False
+#             )
+#             print(f"✓ Classification model downloaded to {cls_weight_path}")
+#         else:
+#             print(f"✓ Classification model already exists: {cls_weight_path}")
+        
+#         print("Loading localization model into memory...")
+#         loc_model = SeResNext50_Unet_Loc().to(DEVICE)
+#         loc_checkpoint = torch.load(loc_weight_path, map_location=DEVICE, weights_only=False)
+#         loc_model.load_state_dict(loc_checkpoint['state_dict'])
+#         loc_model.eval()
+#         print("✓ Localization model loaded")
+        
+#         print("Loading classification model into memory...")
+#         cls_model = SeResNext50_Unet_Double().to(DEVICE)
+#         cls_checkpoint = torch.load(cls_weight_path, map_location=DEVICE, weights_only=False)
+#         cls_model.load_state_dict(cls_checkpoint['state_dict'], strict=False)
+#         cls_model.eval()
+#         print("✓ Classification model loaded")
+        
+#         print(f"Models successfully loaded on {DEVICE}")
+#         return True
+        
+#     except Exception as e:
+#         print(f"Error loading models: {str(e)}")
+#         import traceback
+#         traceback.print_exc()
+#         return False
 
 def create_damage_heatmap(loc_pred, cls_pred, threshold=0.3):
     """
@@ -225,18 +351,15 @@ def create_overlay(original_img, heatmap, alpha=0.5):
 def delete_analysis(analysis_id):
     """Delete a specific analysis and all its files"""
     try:
-        # Path to the individual analysis folder
         analysis_dir = os.path.join(RESULTS_FOLDER, analysis_id)
         json_file = os.path.join(RESULTS_FOLDER, f'{analysis_id}.json')
         
         deleted = False
         
-        # Delete the folder if it exists (contains all images)
         if os.path.exists(analysis_dir):
             shutil.rmtree(analysis_dir)
             deleted = True
         
-        # Delete the JSON metadata file
         if os.path.exists(json_file):
             os.remove(json_file)
             deleted = True
@@ -367,11 +490,9 @@ def detect_damage():
         #     }
         # }
 
-        # Generate unique ID for this analysis
         analysis_id = str(uuid.uuid4())
         timestamp = datetime.now().isoformat()
         
-        # Base result data
         result_data = {
             'id': analysis_id,
             'timestamp': timestamp,
@@ -387,7 +508,6 @@ def detect_damage():
             }
         }
         
-        # Save updated JSON metadata
         json_path = os.path.join(RESULTS_FOLDER, f'{analysis_id}.json')
         with open(json_path, 'w') as f:
             json.dump(result_data, f, indent=2)
@@ -405,23 +525,18 @@ def detect_damage():
         
         print("✓ Analysis complete")
 
-        # === SAVE FULL ANALYSIS ARTIFACTS TO DISK ===
         analysis_dir = os.path.join(RESULTS_FOLDER, analysis_id)
         os.makedirs(analysis_dir, exist_ok=True)
         
-        # Save original pre and post-disaster images
         cv2.imwrite(os.path.join(analysis_dir, 'pre_disaster.jpg'), pre_img)
         cv2.imwrite(os.path.join(analysis_dir, 'post_disaster.jpg'), post_img)
         
-        # Save all generated visualizations
         cv2.imwrite(os.path.join(analysis_dir, 'heatmap.png'), heatmap)
         cv2.imwrite(os.path.join(analysis_dir, 'overlay.png'), overlay)
         
-        # Save localization mask as grayscale image
         loc_vis = (loc_pred * 255).astype(np.uint8)
         cv2.imwrite(os.path.join(analysis_dir, 'localization.png'), loc_vis)
         
-        # Optional: Save a thumbnail version of overlay (smaller for faster loading in history)
         thumbnail = cv2.resize(overlay, (512, 512), interpolation=cv2.INTER_AREA)
         cv2.imwrite(os.path.join(analysis_dir, 'thumbnail.jpg'), thumbnail)
         
@@ -495,10 +610,8 @@ def get_history():
                 with open(filepath, 'r') as f:
                     result = json.load(f)
                 
-                # Add thumbnail (use overlay or heatmap)
                 result['thumbnail'] = f"/api/results/{result['id']}/overlay.png"
                 
-                # Add direct file URLs
                 if 'files' in result:
                     for key in result['files']:
                         result['files'][key] = f"/api/results/{result['id']}/{os.path.basename(result['files'][key])}"
