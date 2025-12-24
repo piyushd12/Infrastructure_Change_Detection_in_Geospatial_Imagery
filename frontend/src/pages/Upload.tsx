@@ -77,7 +77,7 @@ const Upload = () => {
     try {
       toast({
         title: "Analysis started",
-        description: "Running xView2 AI model on your images...",
+        description: "Running AI model on your images...",
       });
 
       const response = await fetch("http://localhost:5000/api/detect-damage", {

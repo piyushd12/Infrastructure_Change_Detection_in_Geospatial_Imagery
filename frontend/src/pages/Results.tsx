@@ -27,12 +27,10 @@ const Results = () => {
     setAnalysisId,
   } = useAnalysis();
 
-  const [showOverlay, setShowOverlay] = useState(true); // Start with overlay shown
+  const [showOverlay, setShowOverlay] = useState(true);
   const [loading, setLoading] = useState(true);
   const urlAnalysisId = searchParams.get("id");
 
-  // Load analysis from backend if ID is in URL
-  // === FIXED useEffect - no more flickering ===
   useEffect(() => {
     const loadAnalysis = async (id: string) => {
       setLoading(true);
@@ -45,7 +43,6 @@ const Results = () => {
         const result = data.result;
         const baseUrl = "http://localhost:5000/api/results";
 
-        // Only set state if it's different (prevents re-trigger)
         if (analysisId !== id) {
           setAnalysisId(id);
         }
@@ -81,22 +78,18 @@ const Results = () => {
       }
     };
 
-    // Case 1: URL has ?id= → load historical analysis
     if (urlAnalysisId) {
       loadAnalysis(urlAnalysisId);
       return;
     }
 
-    // Case 2: Fresh analysis just completed (context already has data)
     if (overlayBase64 && statistics && analysisId) {
       setLoading(false);
       return;
     }
 
-    // Case 3: Nothing available → go to upload
     navigate("/upload");
-  }, [urlAnalysisId]); // ← Only depend on urlAnalysisId, not context state!
-  // ================================================
+  }, [urlAnalysisId]);
 
   if (loading) {
     return (
@@ -185,7 +178,7 @@ const Results = () => {
                   />
                   {showOverlay && (
                     <div className="absolute bottom-4 left-4 bg-black/70 text-white px-4 py-2 rounded-lg text-sm backdrop-blur">
-                      White: No Damage │ Green: Minor │ Yellow: Major │ Magenta: Destroyed
+                      White: No Damage │ Yellow: Minor │ Orange: Major │ Red: Destroyed
                     </div>
                   )}
                 </div>
