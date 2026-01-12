@@ -417,7 +417,7 @@ def detect_damage():
         
         print("✓ Images loaded")
         
-        # # Preprocess images
+        # Preprocess images
         # print("Preprocessing images...")
         # pre_proc = preprocess_inputs(pre_img)
         # post_proc = preprocess_inputs(post_img)
@@ -607,16 +607,27 @@ def get_history():
         for filename in os.listdir(RESULTS_FOLDER):
             if filename.endswith('.json'):
                 filepath = os.path.join(RESULTS_FOLDER, filename)
-                with open(filepath, 'r') as f:
-                    result = json.load(f)
+                try:
+                    with open(filepath, 'r') as f:
+                        result = json.load(f)
+                    
+                    if 'id' not in result or 'timestamp' not in result:
+                        print(f"Skipping invalid JSON (missing 'id' or 'timestamp'): {filename}")
+                        continue
+                    
+                    result['thumbnail'] = f"/api/results/{result['id']}/overlay.png"
+                    
+                    if 'files' in result:
+                        for key in result['files']:
+                            result['files'][key] = f"/api/results/{result['id']}/{os.path.basename(result['files'][key])}"
+                    
+                    results.append(result)
                 
-                result['thumbnail'] = f"/api/results/{result['id']}/overlay.png"
-                
-                if 'files' in result:
-                    for key in result['files']:
-                        result['files'][key] = f"/api/results/{result['id']}/{os.path.basename(result['files'][key])}"
-                
-                results.append(result)
+                except json.JSONDecodeError:
+                    print(f"Skipping corrupt JSON: {filename}")
+                except Exception as e:
+                    print(f"Error reading {filename}: {str(e)}")
+                    continue
         
         results.sort(key=lambda x: x['timestamp'], reverse=True)
         
