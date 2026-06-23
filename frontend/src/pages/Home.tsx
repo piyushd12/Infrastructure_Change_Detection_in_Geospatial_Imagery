@@ -37,17 +37,17 @@ const Home = () => {
         {/* Animated Background Elements */}
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-full blur-3xl floating-element" />
-          <div className="absolute top-3/4 right-1/4 w-80 h-80 bg-gradient-to-r from-secondary/20 to-primary/20 rounded-full blur-3xl floating-element" style={{animationDelay: '2s'}} />
-          <div className="absolute top-1/2 right-1/2 w-64 h-64 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-full blur-2xl floating-element" style={{animationDelay: '4s'}} />
+          <div className="absolute top-3/4 right-1/4 w-80 h-80 bg-gradient-to-r from-secondary/20 to-primary/20 rounded-full blur-3xl floating-element" style={{ animationDelay: '2s' }} />
+          <div className="absolute top-1/2 right-1/2 w-64 h-64 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-full blur-2xl floating-element" style={{ animationDelay: '4s' }} />
         </div>
-        
+
         {/* Geometric Accent Lines */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-1/3 w-px h-full bg-gradient-to-b from-transparent via-white to-transparent" />
           <div className="absolute top-0 right-1/3 w-px h-full bg-gradient-to-b from-transparent via-white to-transparent" />
           <div className="absolute top-1/3 left-0 w-full h-px bg-gradient-to-r from-transparent via-white to-transparent" />
         </div>
-        
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 z-10">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="space-y-10">
@@ -68,17 +68,17 @@ const Home = () => {
                   Revolutionary artificial intelligence system for analyzing satellite imagery and detecting infrastructure changes over time. Advanced algorithms provide precise damage assessment for disaster response, urban planning, and environmental monitoring.
                 </p>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row gap-6">
-                <Button 
+                <Button
                   className="btn-hero text-xl px-10 py-5"
                   onClick={() => navigate('/upload')}
                 >
                   Launch Analysis
                   <ArrowRight className="ml-3 w-6 h-6" />
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="lg"
                   onClick={() => navigate('/about')}
                   className="glass-card border-white/30 text-white hover:bg-white/10 text-lg px-8 py-5 font-medium"
@@ -86,7 +86,7 @@ const Home = () => {
                   Explore Technology
                 </Button>
               </div>
-              
+
               {/* Stats Section */}
               <div className="grid grid-cols-3 gap-8 pt-8">
                 <div className="text-center">
@@ -103,20 +103,20 @@ const Home = () => {
                 </div>
               </div>
             </div>
-            
+
             <div className="relative lg:ml-8">
               {/* Main Image Container */}
               <div className="relative">
                 <div className="glass-card p-2 rounded-3xl shadow-floating">
                   <div className="rounded-2xl overflow-hidden">
-                    <img 
-                      src={heroImage} 
-                      alt="Advanced satellite image change detection and infrastructure analysis" 
+                    <img
+                      src={heroImage}
+                      alt="Advanced satellite image change detection and infrastructure analysis"
                       className="w-full h-auto transform hover:scale-105 transition-transform duration-700"
                     />
                   </div>
                 </div>
-                
+
                 {/* Floating UI Elements */}
                 <div className="absolute -top-6 -left-6 glass-card p-4 rounded-2xl floating-element">
                   <div className="flex items-center space-x-3">
@@ -124,14 +124,14 @@ const Home = () => {
                     <span className="text-white text-sm font-medium">Live Analysis</span>
                   </div>
                 </div>
-                
-                <div className="absolute -bottom-8 -right-8 glass-card p-6 rounded-2xl floating-element" style={{animationDelay: '1s'}}>
+
+                <div className="absolute -bottom-8 -right-8 glass-card p-6 rounded-2xl floating-element" style={{ animationDelay: '1s' }}>
                   <div className="text-center">
                     <div className="text-2xl font-bold text-white">AI</div>
                     <div className="text-xs text-white/60">Powered</div>
                   </div>
                 </div>
-                
+
                 {/* Ambient Light Effects */}
                 <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-3xl blur-2xl -z-10 opacity-60" />
               </div>
@@ -149,7 +149,7 @@ const Home = () => {
             backgroundSize: '48px 48px'
           }} />
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center mb-20">
             <div className="inline-flex items-center px-6 py-3 rounded-full bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 text-primary font-medium mb-8">
@@ -167,7 +167,7 @@ const Home = () => {
               Our revolutionary AI system transforms satellite imagery analysis with unprecedented accuracy and speed, delivering actionable insights for critical infrastructure monitoring and disaster response.
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <Card key={index} className="group glass-card p-8 h-full hover:shadow-floating transition-all duration-500 hover:-translate-y-2 border-white/10">
@@ -194,13 +194,13 @@ const Home = () => {
       {/* Premium CTA Section */}
       <section className="py-32 hero-background relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-        
+
         {/* Animated Elements */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-1/4 left-1/6 w-72 h-72 bg-gradient-to-r from-white/10 to-transparent rounded-full blur-3xl floating-element" />
-          <div className="absolute bottom-1/4 right-1/6 w-96 h-96 bg-gradient-to-r from-white/5 to-transparent rounded-full blur-3xl floating-element" style={{animationDelay: '3s'}} />
+          <div className="absolute bottom-1/4 right-1/6 w-96 h-96 bg-gradient-to-r from-white/5 to-transparent rounded-full blur-3xl floating-element" style={{ animationDelay: '3s' }} />
         </div>
-        
+
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <div className="glass-card p-16 rounded-3xl">
             <h2 className="text-4xl lg:text-5xl font-bold text-white mb-8 leading-tight">
@@ -213,9 +213,9 @@ const Home = () => {
             <p className="text-2xl text-white/80 mb-12 max-w-3xl mx-auto leading-relaxed font-light">
               Experience the future of satellite imagery analysis. Upload your geospatial data and receive comprehensive change detection insights powered by cutting-edge AI technology.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-              <Button 
+              <Button
                 size="lg"
                 className="btn-hero text-xl px-12 py-6"
                 onClick={() => navigate('/upload')}
