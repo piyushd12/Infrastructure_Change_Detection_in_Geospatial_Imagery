@@ -43,13 +43,13 @@
 //     const loadAnalysis = async (id: string) => {
 //       setLoading(true);
 //       try {
-//         const res = await fetch(`http://localhost:5000/api/history/${id}`);
+//         const res = await fetch(`/api/history/${id}`);
 //         if (!res.ok) throw new Error("Failed to load analysis");
 //         const data = await res.json();
 //         if (!data.success) throw new Error("Analysis not found");
 
 //         const result  = data.result;
-//         const baseUrl = "http://localhost:5000/api/results";
+//         const baseUrl = "/api/results";
 
 //         if (analysisId !== id)                                            setAnalysisId(id);
 //         if (preImagePreview !== `${baseUrl}/${id}/pre_disaster.jpg`)      setPreImagePreview(`${baseUrl}/${id}/pre_disaster.jpg`);
@@ -115,7 +115,7 @@
 //     const id = analysisId || urlAnalysisId;
 //     if (!id) return;
 //     try {
-//       const res  = await fetch(`http://localhost:5000/api/history/${id}`);
+//       const res  = await fetch(`/api/history/${id}`);
 //       const data = await res.json();
 //       const blob = new Blob([JSON.stringify(data.result, null, 2)], { type: "application/json" });
 //       const url  = URL.createObjectURL(blob);
@@ -359,6 +359,7 @@ const Results = () => {
     heatmapBase64, overlayBase64,
     preImagePreview, postImagePreview,
     statistics, analysisId,
+    sessionHistory,
     setHeatmapBase64, setOverlayBase64,
     setPreImagePreview, setPostImagePreview,
     setStatistics, setAnalysisId,
@@ -378,15 +379,15 @@ const Results = () => {
 
   // ── Load analysis ──────────────────────────────────────────────────────────
   useEffect(() => {
-    const loadAnalysis = async (id: string) => {
+    const loadFromBackend = async (id: string) => {
       setLoading(true);
       try {
-        const res = await fetch(`http://localhost:5000/api/history/${id}`);
+        const res = await fetch(`/api/history/${id}`);
         if (!res.ok) throw new Error("Failed to load analysis");
         const data = await res.json();
         if (!data.success) throw new Error("Analysis not found");
         const result  = data.result;
-        const baseUrl = "http://localhost:5000/api/results";
+        const baseUrl = "/api/results";
         if (analysisId !== id)                                           setAnalysisId(id);
         if (preImagePreview !== `${baseUrl}/${id}/pre_disaster.jpg`)     setPreImagePreview(`${baseUrl}/${id}/pre_disaster.jpg`);
         if (postImagePreview !== `${baseUrl}/${id}/post_disaster.jpg`)   setPostImagePreview(`${baseUrl}/${id}/post_disaster.jpg`);
@@ -399,9 +400,28 @@ const Results = () => {
         navigate("/upload");
       } finally { setLoading(false); }
     };
-    if (urlAnalysisId)                             { loadAnalysis(urlAnalysisId); return; }
+
+    if (urlAnalysisId) {
+      // Check session history first (avoids backend round-trip when clicking from Progress)
+      const sessionEntry = sessionHistory.find(e => e.id === urlAnalysisId);
+      if (sessionEntry) {
+        if (analysisId !== sessionEntry.id)                       setAnalysisId(sessionEntry.id);
+        if (preImagePreview !== sessionEntry.preImagePreview)     setPreImagePreview(sessionEntry.preImagePreview);
+        if (postImagePreview !== sessionEntry.postImagePreview)   setPostImagePreview(sessionEntry.postImagePreview);
+        if (overlayBase64   !== sessionEntry.overlayBase64)       setOverlayBase64(sessionEntry.overlayBase64);
+        if (heatmapBase64   !== sessionEntry.heatmapBase64)       setHeatmapBase64(sessionEntry.heatmapBase64);
+        if (JSON.stringify(statistics) !== JSON.stringify(sessionEntry.statistics)) setStatistics(sessionEntry.statistics);
+        setLoading(false);
+        return;
+      }
+      // Not in session — fall back to backend (shareable link / post-refresh)
+      loadFromBackend(urlAnalysisId);
+      return;
+    }
+
     if (overlayBase64 && statistics && analysisId) { setLoading(false); return; }
     navigate("/upload");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlAnalysisId]);
 
   // ── Shareable link ─────────────────────────────────────────────────────────
@@ -920,7 +940,7 @@ const handleDownloadPDF = async () => {
     if (!id) return;
     setAnalyzingRegion(true);
     try {
-      const res  = await fetch("http://localhost:5000/api/analyze-region", {
+      const res  = await fetch("/api/analyze-region", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ analysis_id: id, bbox: { x_norm: bbox.x, y_norm: bbox.y, w_norm: bbox.w, h_norm: bbox.h } }),
       });
@@ -1165,7 +1185,7 @@ const handleDownloadPDF = async () => {
               <Button className="w-full" variant="outline" onClick={async () => {
                 const id = analysisId || urlAnalysisId; if (!id) return;
                 try {
-                  const res = await fetch(`http://localhost:5000/api/history/${id}`);
+                  const res = await fetch(`/api/history/${id}`);
                   const data = await res.json();
                   const blob = new Blob([JSON.stringify(data.result, null, 2)], {type:"application/json"});
                   const url  = URL.createObjectURL(blob);

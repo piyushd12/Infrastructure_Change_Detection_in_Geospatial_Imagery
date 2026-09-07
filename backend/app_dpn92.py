@@ -13,6 +13,7 @@ from datetime import datetime
 import uuid
 import shutil
 import json
+import zipfile
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 from torch.hub import download_url_to_file
@@ -49,7 +50,10 @@ UPLOAD_FOLDER   = os.path.join(BASE_DIR, 'uploads')
 RESULTS_FOLDER  = os.path.join(BASE_DIR, 'results')
 
 # ── Ensemble weight paths ──────────────────────────────────────────────────────
-NUM_FOLDS = 3
+# NUM_FOLDS = 3   # <- was: load all 3 folds (seeds 0,1,2) and ensemble them
+NUM_FOLDS = 1      # Only load 1 LOC + 1 CLS model (seed 0). LOC/CLS_MODEL_PATHS below
+                   # are built from range(NUM_FOLDS), so this alone restricts loading
+                   # to dpn92_loc_0_0_best.pth and dpn92_cls_cce_0_1_best.
 
 LOC_MODEL_PATHS = [
     os.path.join(WEIGHTS_FOLDER, 'LOC', f'dpn92_loc_{i}_0_best.pth')
@@ -543,11 +547,14 @@ def health_check():
         'models_loaded':   len(loc_models) == NUM_FOLDS and len(cls_models) == NUM_FOLDS,
         'device':          str(DEVICE),
         'num_folds':       NUM_FOLDS,
-        'loc_model':       'Dpn92_Unet_Loc',
-        'cls_model':       'Dpn92_Unet_Double',
+        # 'ensemble_strategy': {
+        #     'localization':     'average sigmoid outputs across 3 folds',
+        #     'classification':   'average sigmoid outputs across 3 folds → argmax (majority vote per pixel)',
+        #     'cls_weights_used': 'BEST'
+        # }
         'ensemble_strategy': {
-            'localization':     'average sigmoid outputs across 3 folds',
-            'classification':   'average sigmoid outputs across 3 folds → argmax (majority vote per pixel)',
+            'localization':     'single seed-0 model (no ensembling)',
+            'classification':   'single seed-0 model → argmax per pixel',
             'cls_weights_used': 'BEST'
         }
     })
@@ -622,9 +629,6 @@ def detect_damage():
             'statistics': stats,
             'ensemble': {
                 'num_folds':   NUM_FOLDS,
-                'loc_model':   'Dpn92_Unet_Loc',
-                'cls_model':   'Dpn92_Unet_Double',
-                'cls_weights': 'BEST'
             },
             'files': {
                 'pre_disaster':  f'{analysis_id}/pre_disaster.jpg',
@@ -1164,6 +1168,63 @@ def download_heatmap(analysis_id):
                          as_attachment=True,
                          download_name=f'damage_heatmap_{analysis_id}.png')
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ── Sample images ──────────────────────────────────────────────────────────────
+
+SAMPLES_FOLDER = os.path.join(BASE_DIR, 'samples')
+
+@app.route('/api/samples', methods=['GET'])
+def list_samples():
+    """List available sample image pairs."""
+    try:
+        if not os.path.isdir(SAMPLES_FOLDER):
+            return jsonify({'success': True, 'samples': []})
+
+        files = [
+            f for f in os.listdir(SAMPLES_FOLDER)
+            if f.lower().endswith(('.jpg', '.jpeg', '.png'))
+        ]
+        return jsonify({'success': True, 'samples': sorted(files)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/samples/download', methods=['GET'])
+def download_samples():
+    """
+    Bundle all files in backend/samples/ into an in-memory ZIP and stream it
+    to the browser as a single attachment download.
+    """
+    try:
+        if not os.path.isdir(SAMPLES_FOLDER):
+            return jsonify({'error': 'No sample images found'}), 404
+
+        sample_files = [
+            f for f in os.listdir(SAMPLES_FOLDER)
+            if f.lower().endswith(('.jpg', '.jpeg', '.png'))
+        ]
+
+        if not sample_files:
+            return jsonify({'error': 'No sample images found in samples folder'}), 404
+
+        # Build the ZIP in memory
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for filename in sorted(sample_files):
+                file_path = os.path.join(SAMPLES_FOLDER, filename)
+                zf.write(file_path, arcname=filename)
+
+        zip_buffer.seek(0)
+        return send_file(
+            zip_buffer,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name='sample_disaster_images.zip'
+        )
+    except Exception as e:
+        print(f'Error creating sample ZIP: {e}')
         return jsonify({'error': str(e)}), 500
 
 

@@ -1,5 +1,17 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
+// ── Session-only history entry ─────────────────────────────────────────────────
+export interface HistoryEntry {
+    id: string;
+    timestamp: string;
+    thumbnail: string;          // URL: /api/results/<id>/thumbnail.jpg
+    statistics: any;
+    preImagePreview: string | null;
+    postImagePreview: string | null;
+    overlayBase64: string | null;
+    heatmapBase64: string | null;
+}
+
 interface AnalysisState {
     preImagePreview: string | null;
     postImagePreview: string | null;
@@ -10,6 +22,10 @@ interface AnalysisState {
     analysisId: string | null;
     isAnalyzing: boolean;
     error: string | null;
+    // Session-only history (cleared on page refresh)
+    sessionHistory: HistoryEntry[];
+    addToHistory: (entry: HistoryEntry) => void;
+    removeFromHistory: (id: string) => void;
     setPreImagePreview: (url: string | null) => void;
     setPostImagePreview: (url: string | null) => void;
     setHeatmapBase64: (b64: string | null) => void;
@@ -34,6 +50,17 @@ export const AnalysisProvider = ({ children }: { children: ReactNode }) => {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Lives only in memory — wiped on every page refresh
+    const [sessionHistory, setSessionHistory] = useState<HistoryEntry[]>([]);
+
+    const addToHistory = (entry: HistoryEntry) => {
+        setSessionHistory(prev => [entry, ...prev]);
+    };
+
+    const removeFromHistory = (id: string) => {
+        setSessionHistory(prev => prev.filter(e => e.id !== id));
+    };
+
     return (
         <AnalysisContext.Provider
             value={{
@@ -46,6 +73,9 @@ export const AnalysisProvider = ({ children }: { children: ReactNode }) => {
                 analysisId,
                 isAnalyzing,
                 error,
+                sessionHistory,
+                addToHistory,
+                removeFromHistory,
                 setPreImagePreview,
                 setPostImagePreview,
                 setHeatmapBase64,

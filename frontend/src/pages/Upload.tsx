@@ -80,7 +80,7 @@
 //         description: "Running AI model on your images...",
 //       });
 
-//       const response = await fetch("http://localhost:5000/api/detect-damage", {
+//       const response = await fetch("/api/detect-damage", {
 //         method: "POST",
 //         body: formData,
 //       });
@@ -212,9 +212,9 @@
 // export default Upload;
 
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload as UploadIcon, Image, Loader2, CheckCircle } from "lucide-react";
+import { Upload as UploadIcon, Image, Loader2, CheckCircle, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -282,12 +282,39 @@ const Upload = () => {
     setIsAnalyzing,
     isAnalyzing,
     setError,
+    addToHistory,
   } = useAnalysis();
 
   const preFileRef  = useRef<File | null>(null);
   const postFileRef = useRef<File | null>(null);
   const preInputRef  = useRef<HTMLInputElement>(null);
   const postInputRef = useRef<HTMLInputElement>(null);
+  const [isDownloadingSamples, setIsDownloadingSamples] = useState(false);
+
+  const handleDownloadSamples = async () => {
+    setIsDownloadingSamples(true);
+    try {
+      const response = await fetch('/api/samples/download');
+      if (!response.ok) throw new Error('Download failed');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sample_disaster_images.zip';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({
+        title: 'Download failed',
+        description: 'Could not download sample images. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDownloadingSamples(false);
+    }
+  };
 
   const handleFileUpload = (file: File, type: 'pre' | 'post') => {
     if (!file.type.startsWith('image/')) {
@@ -342,7 +369,7 @@ const Upload = () => {
         description: "Running AI model on your images...",
       });
 
-      const response = await fetch("http://localhost:5000/api/detect-damage", {
+      const response = await fetch("/api/detect-damage", {
         method: "POST",
         body: formData,
       });
@@ -359,6 +386,17 @@ const Upload = () => {
       setStatistics(data.statistics);
       setAnalysisId(data.analysis_id);
 
+      // Add to session-only history (volatile — cleared on page refresh)
+      addToHistory({
+        id: data.analysis_id,
+        timestamp: data.timestamp,
+        thumbnail: `/api/results/${data.analysis_id}/thumbnail.jpg`,
+        statistics: data.statistics,
+        preImagePreview: preFileRef.current ? URL.createObjectURL(preFileRef.current) : null,
+        postImagePreview: postFileRef.current ? URL.createObjectURL(postFileRef.current) : null,
+        overlayBase64: data.visualizations.overlay,
+        heatmapBase64: data.visualizations.heatmap,
+      });
       toast({
         title: "Analysis Complete!",
         description: `Detected damage in ${
@@ -391,6 +429,68 @@ const Upload = () => {
         </p>
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
+          {/* ── Sample Images Download Banner ─────────────────────────── */}
+          <div className="md:col-span-2">
+            <div
+              style={{
+                background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(168,85,247,0.12) 100%)',
+                border: '1px solid rgba(99,102,241,0.35)',
+                borderRadius: '1rem',
+                padding: '1.25rem 1.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, #6366f1, #a855f7)',
+                    borderRadius: '0.65rem',
+                    padding: '0.55rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Image className="w-5 h-5" style={{ color: '#fff' }} />
+                </div>
+                <div>
+                  <p style={{ fontWeight: 600, fontSize: '0.95rem', margin: 0 }}>
+                    Don't have satellite images?
+                  </p>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', margin: 0 }}>
+                    Download our sample pre &amp; post-disaster image pair to try the tool instantly.
+                  </p>
+                </div>
+              </div>
+              <Button
+                id="download-sample-images-btn"
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadSamples}
+                disabled={isDownloadingSamples}
+                style={{
+                  border: '1px solid rgba(99,102,241,0.5)',
+                  color: '#818cf8',
+                  background: 'rgba(99,102,241,0.08)',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {isDownloadingSamples ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Preparing ZIP…</>
+                ) : (
+                  <><Download className="mr-2 h-4 w-4" />Download Sample Images</>  
+                )}
+              </Button>
+            </div>
+          </div>
+          {/* ─────────────────────────────────────────────────────────── */}
           <UploadBox
             type="pre"
             inputRef={preInputRef}

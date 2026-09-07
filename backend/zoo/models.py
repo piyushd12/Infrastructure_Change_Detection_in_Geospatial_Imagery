@@ -252,7 +252,7 @@ class Dpn92_Unet_Loc(nn.Module):
         
         self._initialize_weights()
 
-        encoder = dpn92(pretrained=pretrained)
+        encoder = dpn92(pretrained=False)
 
         # conv1_new = nn.Conv2d(6, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         # _w = encoder.blocks['conv1_1'].conv.state_dict()
@@ -337,7 +337,7 @@ class Dpn92_Unet_Double(nn.Module):
         
         self._initialize_weights()
 
-        encoder = dpn92(pretrained=pretrained)
+        encoder = dpn92(pretrained=False)
 
         # conv1_new = nn.Conv2d(6, 64, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False)
         # _w = encoder.blocks['conv1_1'].conv.state_dict()
